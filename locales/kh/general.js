@@ -1,0 +1,17 @@
+export default {
+  no_data: 'No data.',
+  okay: 'Okay',
+  yes: 'Yes',
+  cancel: 'Cancel',
+  no: 'No',
+  close: 'Close',
+  logout_confirmation: 'Are you sure want to logout?',
+  yes_logout: 'Yes, Logout',
+  delete: 'Delete',
+  update: 'Update',
+  save: 'Save',
+  add: 'Add',
+  edit: 'Edit',
+  change: 'Change',
+  submit: 'Submit',
+}

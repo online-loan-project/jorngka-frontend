@@ -1,0 +1,16 @@
+# Ignore environment variable files
+.env
+.env-*
+.env.*
+
+# Gitignore
+.gitignore
+
+# Ignore directories
+dist/
+node_modules/
+public/
+plugins/
+
+# Ignore files
+package-lock.json

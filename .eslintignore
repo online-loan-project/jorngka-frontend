@@ -1,0 +1,13 @@
+# Common
+node_modules
+dist
+.nuxt
+coverage
+public
+*.log*
+.nitro
+.cache
+.output
+.env
+dist
+plugins
