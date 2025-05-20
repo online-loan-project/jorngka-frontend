@@ -17,6 +17,8 @@ const isEditing = ref(false)
 const editForm = ref({
   rate: 0
 })
+const password = ref('')
+const showPasswordDialog = ref(false)
 
 // Store
 const interestRateStore = useInterestRateStore()
@@ -42,16 +44,24 @@ const startEditing = () => {
 
 const cancelEditing = () => {
   isEditing.value = false
+  password.value = ''
+}
+
+const handleSave = () => {
+  showPasswordDialog.value = true
 }
 
 const saveInterestRate = async () => {
   saving.value = true
   try {
     const updatedRate = await interestRateStore.store({
-      rate: editForm.value.rate
+      rate: editForm.value.rate,
+      password: password.value
     })
     interestRate.value = updatedRate
     isEditing.value = false
+    password.value = ''
+    showPasswordDialog.value = false
     fetchInterestRate()
     ElMessage.success('Interest rate updated successfully')
   } catch (error) {
@@ -101,7 +111,7 @@ onMounted(() => {
               type="success"
               :icon="Check"
               :loading="saving"
-              @click="saveInterestRate"
+              @click="handleSave"
             >
               Save
             </el-button>
@@ -159,6 +169,41 @@ onMounted(() => {
         </div>
       </div>
     </el-card>
+
+    <!-- Password Dialog -->
+    <el-dialog
+      v-model="showPasswordDialog"
+      title="Confirm Changes"
+      width="30%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="true"
+      required
+    >
+      <div class="space-y-4">
+        <p>Please enter your password to confirm the interest rate change:</p>
+        <el-input
+          v-model="password"
+          type="password"
+          placeholder="Enter your password"
+          show-password
+          @keyup.enter="saveInterestRate"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showPasswordDialog = false">Cancel</el-button>
+          <el-button
+            type="primary"
+            :loading="saving"
+            @click="saveInterestRate"
+            :disabled="!password"
+          >
+            Confirm
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -183,5 +228,9 @@ onMounted(() => {
 :deep(.el-input-number__decrease),
 :deep(.el-input-number__increase) {
   @apply h-auto;
+}
+
+.dialog-footer {
+  @apply flex justify-end;
 }
 </style>

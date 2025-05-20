@@ -24,8 +24,8 @@ class LoanService extends BaseService {
   }
 
   //approve
-  async approve(id) {
-    return await this._post(`${this._prefix}/request-loan/approve/${id}`, {})
+  async approve(id, req) {
+    return await this._post(`${this._prefix}/request-loan/approve/${id}`, req)
   }
 
   //reject

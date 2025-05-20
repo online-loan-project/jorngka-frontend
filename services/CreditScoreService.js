@@ -24,8 +24,8 @@ class CreditScoreService extends BaseService {
   }
 
   //store
-  async reset(req) {
-    return await this._post(`${this._prefix}/credit-score/reset/${req}`, )
+  async reset(params ,req) {
+    return await this._post(`${this._prefix}/credit-score/reset/${params}`, req)
   }
 
   //update

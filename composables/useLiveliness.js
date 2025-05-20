@@ -4,33 +4,35 @@ export function useFaceDetection() {
   const videoElement = ref(null)
   const canvasElement = ref(null)
   const completedActionCount = ref(0)
-  const actionInstruction = ref('Please wait...')
+  const actionInstruction = ref('Position your face in the circle')
   const successVisible = ref(false)
   const capturedImages = ref([])
+  const showFacePositionHint = ref(true)
+  const facePositionFeedback = ref('Move closer/farther until your face fits inside the circle')
+  const showOverlay = ref(true)
 
-  const actionType = {
-    0: 'Please blink',
-    1: 'Please open your mouth',
-    2: 'Please shake your head',
-    3: 'Please nod'
-  }
+  // Only 3 facial expression actions
+  const actionSequence = [
+    { text: 'Please smile', key: 'smile', threshold: 0.3 },
+    { text: 'Please blink', key: 'blink', threshold: 0.2 },
+  ]
 
-  let currentActionType = -1
+  let currentActionIndex = -1
   let faceMesh = null
   let inference = null
   let canvasCtx = null
   let realLandmarks = []
+  let faceInCircle = false
+  let facePositionCheckCount = 0
+  let normalEyebrowHeight = null // To store baseline eyebrow position
 
   onMounted(() => {
-    // Only initialize if running in a browser
     if (typeof window !== 'undefined') {
       initFaceDetection()
     }
   })
 
-  //close FaceDection
   function closeFaceDetection() {
-    //close webcam
     if (inference) {
       inference.video.pause()
       inference.video.srcObject.getTracks().forEach(track => track.stop())
@@ -40,9 +42,7 @@ export function useFaceDetection() {
 
   async function initFaceDetection() {
     const faceMeshModule = await import('@mediapipe/face_mesh')
-    const {
-      FaceMesh
-    } = faceMeshModule
+    const { FaceMesh } = faceMeshModule
 
     if (!videoElement.value || !canvasElement.value) return
 
@@ -125,8 +125,58 @@ export function useFaceDetection() {
     }
   }
 
+  function drawFaceCircle() {
+    const canvas = canvasElement.value
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(canvas.width, canvas.height) * 0.4
+
+    canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    canvasCtx.fillRect(0, 0, canvas.width, canvas.height)
+
+    canvasCtx.globalCompositeOperation = 'destination-out'
+    canvasCtx.beginPath()
+    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+    canvasCtx.fill()
+    canvasCtx.globalCompositeOperation = 'source-over'
+
+    canvasCtx.beginPath()
+    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+    canvasCtx.strokeStyle = faceInCircle ? '#4CAF50' : '#FF9800'
+    canvasCtx.lineWidth = 4
+    canvasCtx.stroke()
+
+    canvasCtx.beginPath()
+    canvasCtx.arc(centerX, centerY, radius * 0.7, 0, 2 * Math.PI)
+    canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    canvasCtx.lineWidth = 2
+    canvasCtx.stroke()
+
+    facePositionFeedback.value = faceInCircle
+      ? 'Perfect! Now follow the actions'
+      : 'Center your face within the circle'
+  }
+
+  function checkFaceInCircle(landmarks) {
+    if (!landmarks || landmarks.length === 0) return false
+
+    const canvas = canvasElement.value
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(canvas.width, canvas.height) * 0.4
+
+    const noseTip = landmarks[4]
+    const faceX = noseTip[0] * canvas.width / 100
+    const faceY = noseTip[1] * canvas.height / 100
+
+    const distance = Math.sqrt(Math.pow(faceX - centerX, 2) + Math.pow(faceY - centerY, 2))
+    const faceWidth = Math.abs(landmarks[234][0] - landmarks[454][0]) * canvas.width / 100
+    const sizeValid = faceWidth > radius * 0.6 && faceWidth < radius * 1.2
+
+    return distance < radius * 0.8 && sizeValid
+  }
+
   async function faceMeshResults(results, isDraw = true) {
-    //if mobile device set isDraw to false
     if (window.innerWidth < 768) {
       isDraw = false
     }
@@ -147,13 +197,36 @@ export function useFaceDetection() {
     canvasCtx.clearRect(0, 0, canvasElement.value.width, canvasElement.value.height)
     realLandmarks = []
 
+    drawFaceCircle()
+
     if (results.multiFaceLandmarks) {
       const landmarks = results.multiFaceLandmarks[0]
       if (!landmarks) return
 
       for (const point of landmarks) {
-        point.x = 1 - point.x  // Flip Horizontal
+        point.x = 1 - point.x
         realLandmarks.push([point.x * 100, point.y * 100 * (canvasElement.value.height / canvasElement.value.width)])
+      }
+
+      const currentFaceInCircle = checkFaceInCircle(realLandmarks)
+
+      if (currentFaceInCircle !== faceInCircle) {
+        facePositionCheckCount++
+        if (facePositionCheckCount > 5) {
+          faceInCircle = currentFaceInCircle
+          facePositionCheckCount = 0
+          if (faceInCircle) {
+            showFacePositionHint.value = false
+          }
+        }
+      } else {
+        facePositionCheckCount = 0
+      }
+
+      if (!faceInCircle && currentActionIndex === -1) {
+        actionInstruction.value = 'Position your face in the circle'
+        showFacePositionHint.value = true
+        return
       }
 
       if (isDraw) {
@@ -169,53 +242,54 @@ export function useFaceDetection() {
       }
     }
 
-    if (currentActionType == -1) {
-      currentActionType = Math.floor(Math.random() * 4)
-      actionInstruction.value = actionType[currentActionType]
+    if (currentActionIndex === -1 && faceInCircle) {
+      currentActionIndex = 0
+      actionInstruction.value = actionSequence[currentActionIndex].text
+      return
     }
 
-    let flag = false
+    if (!faceInCircle) return
 
-    if (currentActionType == 0) {
-      if (eyeAspectRation(realLandmarks) < 0.2) {
-        flag = true
-      }
-    } else if (currentActionType == 1) {
-      if (mouthAspectRatio(realLandmarks) > 0.6) {
-        flag = true
-      }
-    } else if (currentActionType == 2) {
-      let points = getPoint5(realLandmarks)
-      let angle = getPoint5Angle(points)
-      if ((angle[2] < -90 || angle[2] > 90) && (angle[1] > -30 && angle[1] < 30)) {
-        flag = true
-      }
-    } else if (currentActionType == 3) {
-      let points = getPoint5(realLandmarks)
-      let angle = getPoint5Angle(points)
-      if ((angle[1] < -30 || angle[1] > 30) && (angle[2] > -30 && angle[2] < 30)) {
-        flag = true
-      }
+    let actionCompleted = false
+    const currentAction = actionSequence[currentActionIndex]
+
+    switch (currentAction.key) {
+      case 'smile':
+        if (mouthAspectRatio(realLandmarks) > currentAction.threshold) {
+          actionCompleted = true
+        }
+        break
+
+      case 'blink':
+        if (eyeAspectRatio(realLandmarks) < currentAction.threshold) {
+          actionCompleted = true
+        }
+        break
     }
 
-    if (flag) {
-      currentActionType = -1
-      actionInstruction.value = 'Please wait...'
+    if (actionCompleted && capturedImages.value.length < 3) {
+      captureImage()
+      completedActionCount.value += 1
 
-      if (completedActionCount.value >= 3) {
-        successVisible.value = true
+      if (currentActionIndex < actionSequence.length - 1) {
+        currentActionIndex++
+        actionInstruction.value = actionSequence[currentActionIndex].text
+        // Reset normal eyebrow height for next detection
+        normalEyebrowHeight = null
       } else {
-        captureImage()
-        completedActionCount.value += 1
+        successVisible.value = true
       }
 
-      setTimeout(() => {
-        actionInstruction.value = actionType[currentActionType]
-      }, 2000)
+      setTimeout(() => {}, 1000)
     }
   }
 
   function captureImage() {
+    // Stop capturing if we already have 3 images
+    if (capturedImages.value.length >= 3) {
+      return
+    }
+
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
 
@@ -226,9 +300,14 @@ export function useFaceDetection() {
 
     const imageData = canvas.toDataURL('image/png')
     capturedImages.value.push(imageData)
+
+    // Also stop further actions if we've reached 3 images
+    if (capturedImages.value.length >= 3) {
+      successVisible.value = true
+    }
   }
 
-  // Helper functions (unchanged from original)
+  // Helper functions
   function get2PointsNorm(p1, p2) {
     let sum = 0
     for (let index = 0; index < p1.length; index++) {
@@ -245,7 +324,7 @@ export function useFaceDetection() {
     return (h1 + h2 + h3) / (3 * v1)
   }
 
-  function eyeAspectRation(landmarks) {
+  function eyeAspectRatio(landmarks) {
     let leftEyePoints = [landmarks[263], landmarks[385], landmarks[386], landmarks[387], landmarks[362], landmarks[380], landmarks[374], landmarks[373]]
     let leftEyeAspectRatio = get4PointsAspectRatio(leftEyePoints)
 
@@ -263,54 +342,6 @@ export function useFaceDetection() {
     return verticalDistance / horizontalDistance
   }
 
-  function getPoint5(landmarks) {
-    let point5 = []
-    point5.push(landmarks[468])
-    point5.push(landmarks[473])
-    point5.push(landmarks[4])
-    point5.push(landmarks[61])
-    point5.push(landmarks[291])
-    return point5
-  }
-
-  function getPoint5Angle(points) {
-    let LMx = []
-    let LMy = []
-    for (let index = 0; index < points.length; index++) {
-      LMx.push(points[index][0])
-      LMy.push(points[index][1])
-    }
-
-    let dPx_eyes = Math.max((LMx[1] - LMx[0]), 1.0)
-    let dPy_eyes = LMy[1] - LMy[0]
-    let angle = Math.atan(dPy_eyes / dPx_eyes)
-
-    let alpha = Math.cos(angle)
-    let beta = Math.sin(angle)
-
-    let LMRx = []
-    let LMRy = []
-    for (let index = 0; index < points.length; index++) {
-      LMRx.push(alpha * LMx[index] + beta * LMy[index] + (1 - alpha) * LMx[2] / 2 - beta * LMy[2] / 2)
-      LMRy.push(-beta * LMx[index] + alpha * LMy[index] + beta * LMx[2] / 2 + (1 - alpha) * LMy[2] / 2)
-    }
-
-    let dXtot = (LMRx[1] - LMRx[0] + LMRx[4] - LMRx[3]) / 2
-    let dYtot = (LMRy[3] - LMRy[0] + LMRy[4] - LMRy[1]) / 2
-
-    let dXnose = (LMRx[1] - LMRx[2] + LMRx[4] - LMRx[2]) / 2
-    let dYnose = (LMRy[3] - LMRy[2] + LMRy[4] - LMRy[2]) / 2
-
-    let Xfrontal = dXtot != 0 ? (-90 + 90 / 0.5 * dXnose / dXtot) : 0
-    let Yfrontal = dYtot != 0 ? (-90 + 90 / 0.5 * dYnose / dYtot) : 0
-
-    let roll = angle * 180 / Math.PI
-    let pitch = Yfrontal
-    let yaw = Xfrontal
-
-    return [roll, pitch, yaw]
-  }
-
   return {
     videoElement,
     canvasElement,
@@ -318,6 +349,9 @@ export function useFaceDetection() {
     actionInstruction,
     successVisible,
     capturedImages,
-    closeFaceDetection
+    showFacePositionHint,
+    closeFaceDetection,
+    facePositionFeedback,
+    showOverlay
   }
 }

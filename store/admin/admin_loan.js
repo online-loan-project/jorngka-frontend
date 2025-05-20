@@ -17,9 +17,9 @@ export const useAdminLoanStore = defineStore('admin_loans', () => {
   }
 
   //paid
-  const paid = async (repaymentId) => {
+  const paid = async (repaymentId, req) => {
     try {
-      const { data } = await adminLoanService.paid(repaymentId)
+      const { data } = await adminLoanService.paid(repaymentId, req)
       return data
     } catch (error) {
       ElMessage.error(error.message || 'Paid failed')
