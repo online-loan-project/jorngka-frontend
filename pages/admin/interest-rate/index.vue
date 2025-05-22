@@ -17,7 +17,6 @@ const isEditing = ref(false)
 const editForm = ref({
   rate: 0
 })
-const password = ref('')
 const showPasswordDialog = ref(false)
 
 // Store
@@ -47,16 +46,25 @@ const cancelEditing = () => {
   password.value = ''
 }
 
-const handleSave = () => {
-  showPasswordDialog.value = true
-}
-
 const saveInterestRate = async () => {
   saving.value = true
   try {
+
+    const { value: password } = await ElMessageBox.prompt(
+      'Please enter your password to confirm',
+      'Password Confirmation',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        inputType: 'password',
+        inputPattern: /\S+/, // At least one non-whitespace character
+        inputErrorMessage: 'Password is required',
+      },
+    )
+
     const updatedRate = await interestRateStore.store({
       rate: editForm.value.rate,
-      password: password.value
+      password: password
     })
     interestRate.value = updatedRate
     isEditing.value = false
@@ -111,7 +119,7 @@ onMounted(() => {
               type="success"
               :icon="Check"
               :loading="saving"
-              @click="handleSave"
+              @click="saveInterestRate"
             >
               Save
             </el-button>
@@ -169,41 +177,6 @@ onMounted(() => {
         </div>
       </div>
     </el-card>
-
-    <!-- Password Dialog -->
-    <el-dialog
-      v-model="showPasswordDialog"
-      title="Confirm Changes"
-      width="30%"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="true"
-      required
-    >
-      <div class="space-y-4">
-        <p>Please enter your password to confirm the interest rate change:</p>
-        <el-input
-          v-model="password"
-          type="password"
-          placeholder="Enter your password"
-          show-password
-          @keyup.enter="saveInterestRate"
-        />
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showPasswordDialog = false">Cancel</el-button>
-          <el-button
-            type="primary"
-            :loading="saving"
-            @click="saveInterestRate"
-            :disabled="!password"
-          >
-            Confirm
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 

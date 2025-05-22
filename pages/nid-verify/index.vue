@@ -2,6 +2,11 @@
 import { useLivelinessStore } from '~/store/liveliness.js'
 import { ElMessage, ElUpload, ElButton, ElInput, ElAlert, ElProgress } from 'element-plus'
 
+definePageMeta({
+  layout: 'default',
+  middleware: ['authenticated'],
+})
+
 const livelinessStore = useLivelinessStore()
 const { storeNid } = livelinessStore
 
@@ -86,7 +91,7 @@ const submitNid = async () => {
     ElMessage.success('NID verification submitted successfully!')
     isSubmitNid.value = false
   } catch (error) {
-    errors.value.general = error?.message || 'An error occurred during verification'
+    errors.value.general = error || 'An error occurred during verification'
     ElMessage.error(errors.value.general)
   } finally {
     clearInterval(progressInterval)
