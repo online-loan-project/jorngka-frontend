@@ -1,11 +1,13 @@
 import { ElMessage } from 'element-plus'
 import FaceService from '~/services/FaceService.js'
+import { useCookies } from 'vue3-cookies'
 
 const faceService = FaceService.getInstance()
 
 export const useFaceVerifyStore = defineStore('face-verify', () => {
   const liveliness = ref(null)
   const nid = ref(null)
+  const { cookies } = useCookies()
 
   //updateProfile function
   const faceVerify = async (payload) => {
@@ -14,6 +16,12 @@ export const useFaceVerifyStore = defineStore('face-verify', () => {
       if (!data) {
         throw new Error('No data returned')
       }
+      const userData = data.user || {}
+
+      cookies.remove('user')
+      const cookieOptions = { secure: true, sameSite: 'Strict' }
+      cookies.set('user', JSON.stringify(userData), cookieOptions)
+
       liveliness.value = data
       return data
     } catch (error) {

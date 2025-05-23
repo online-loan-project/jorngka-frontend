@@ -4,7 +4,7 @@ import { ElMessage, ElUpload, ElButton, ElInput, ElAlert, ElProgress } from 'ele
 
 definePageMeta({
   layout: 'default',
-  middleware: ['authenticated'],
+  middleware: ['authenticated', 'face-verification'],
 })
 
 const livelinessStore = useLivelinessStore()
