@@ -24,8 +24,8 @@ class LoanService extends BaseService {
   }
 
   //paid
-  async paid(repaymentId) {
-    return await this._post(`${this._prefix}/loan/repayment/paid/${repaymentId}`, {})
+  async paid(repaymentId, req) {
+    return await this._post(`${this._prefix}/loan/repayment/paid/${repaymentId}`, req)
   }
 
 

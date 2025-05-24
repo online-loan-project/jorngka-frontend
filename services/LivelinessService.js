@@ -17,6 +17,10 @@ class LivelinessService extends BaseService {
   async liveliness(req) {
     return await this._post(`${this._prefix}/liveliness`, req)
   }
+
+  async storeNid(req) {
+    return await this._post(`${this._prefix}/nid-verify`, req)
+  }
 }
 
 export default LivelinessService

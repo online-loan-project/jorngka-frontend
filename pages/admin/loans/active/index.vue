@@ -6,7 +6,7 @@ definePageMeta({
   middleware: ['authenticated'],
 })
 
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 // Import Element Plus icons
 import {
@@ -15,145 +15,154 @@ import {
   Clock,
   CircleCheck,
   Plus,
-  View
+  View,
 } from '@element-plus/icons-vue'
 
 const apiResponse = ref({
   data: [],
   schedule_repayment: [],
   pagination: {},
-  summary: {}
-});
+  summary: {},
+})
 
-const loading = ref(false);
-const showDetailsDialog = ref(false);
-const selectedLoan = ref(null);
+const loading = ref(false)
+const showDetailsDialog = ref(false)
+const selectedLoan = ref(null)
 
 // Pagination controls
-const currentPage = ref(1);
-const pageSize = ref(10);
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 const loanStore = useAdminLoanStore()
 const { getLoan, paid } = loanStore
 
 const fetchData = async (page = 1) => {
-  loading.value = true;
+  loading.value = true
   try {
-    const response = await getLoan({page: page, active: 'unpaid'});
-    apiResponse.value = response; // Access the nested data property
+    const response = await getLoan({ page: page, active: 'unpaid' })
+    apiResponse.value = response // Access the nested data property
     // Update pagination
-    currentPage.value = page;
+    currentPage.value = page
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 //repayment paid
+// In your paidLoan function:
 const paidLoan = async (loanId) => {
   try {
-    // Show confirmation dialog
+    // First confirmation dialog
     await ElMessageBox.confirm(
       'Are you sure you want to mark this repayment as paid?',
       'Confirm Payment',
       {
-        confirmButtonText: 'Confirm',
+        confirmButtonText: 'Continue',
         cancelButtonText: 'Cancel',
         type: 'warning',
-      }
-    );
+      },
+    )
 
-    loading.value = true;
-    const response = await paid(loanId);
+    // Password input dialog
+    const { value: password } = await ElMessageBox.prompt(
+      'Please enter your password to confirm this payment',
+      'Password Confirmation',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        inputType: 'password',
+        inputPattern: /\S+/, // At least one non-whitespace character
+        inputErrorMessage: 'Password is required',
+      },
+    )
+    loading.value = true
+    const response = await paid(loanId, { password: password }) // You'll need to modify your store method to accept password
 
     // Show success message
     ElMessage({
       message: 'Repayment marked as paid successfully',
       type: 'success',
-    });
+    })
 
     // Refresh the loan details
     if (selectedLoan.value) {
-      const updatedLoan = apiResponse.value.data.find(loan => loan.id === selectedLoan.value.id);
+      const updatedLoan = apiResponse.value.data.find(
+        (loan) => loan.id === selectedLoan.value.id,
+      )
       if (updatedLoan) {
         selectedLoan.value = {
           ...updatedLoan,
-        };
+        }
       }
     }
 
     // Refresh the main table data
-    fetchData(currentPage.value);
+    fetchData(currentPage.value)
     showDetailsDialog.value = false
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage({
-        message: 'Failed to mark repayment as paid',
-        type: 'error',
-      });
-    }
+    ElMessage.error(error)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
-
+}
 const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-};
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
+}
 
 const getStatusText = (statusCode) => {
   const statusMap = {
-    '0': 'UNPAID',
-    '1': 'PAID',
-  };
-  return statusMap[statusCode] || statusCode;
-};
+    0: 'UNPAID',
+    1: 'PAID',
+  }
+  return statusMap[statusCode] || statusCode
+}
 
 const getStatusType = (statusCode) => {
   const typeMap = {
-    '0': 'warning', // Pending
-    '1': 'success', // Approved
-  };
-  return typeMap[statusCode] || '';
-};
+    0: 'warning', // Pending
+    1: 'success', // Approved
+  }
+  return typeMap[statusCode] || ''
+}
 
 const getRepaymentStatusText = (statusCode) => {
   const statusMap = {
-    '0': 'Pending',
-    '1': 'Paid',
-    '2': 'Late',
-  };
-  return statusMap[statusCode] || statusCode;
-};
+    0: 'Pending',
+    1: 'Paid',
+    2: 'Late',
+  }
+  return statusMap[statusCode] || statusCode
+}
 
 const getRepaymentStatusType = (statusCode) => {
   const typeMap = {
-    '0': 'info',    // Pending
-    '1': 'success', // Paid
-    '2': 'warning', // Late
-    '3': 'danger'   // Overdue
-  };
-  return typeMap[statusCode] || '';
-};
+    0: 'info', // Pending
+    1: 'success', // Paid
+    2: 'warning', // Late
+    3: 'danger', // Overdue
+  }
+  return typeMap[statusCode] || ''
+}
 
 const formatSimpleDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-};
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString()
+}
 
 const viewDetails = (loan) => {
   selectedLoan.value = {
     ...loan,
-  };
-  showDetailsDialog.value = true;
-};
+  }
+  showDetailsDialog.value = true
+}
 
 // Initial data fetch
 onMounted(() => {
-  fetchData();
-});
+  fetchData()
+})
 </script>
 
 <template>
@@ -167,11 +176,15 @@ onMounted(() => {
       <el-card shadow="hover" class="summary-card">
         <div class="flex items-center">
           <div class="flex p-3 rounded-full bg-blue-50 mr-4">
-            <el-icon class="text-blue-500 text-xl"><Document /></el-icon>
+            <el-icon class="text-blue-500 text-xl">
+              <Document />
+            </el-icon>
           </div>
           <div>
             <p class="text-sm text-gray-500">Total Loans</p>
-            <p class="text-2xl font-bold">{{ apiResponse?.summary?.total_loan || 0 }}</p>
+            <p class="text-2xl font-bold">
+              {{ apiResponse?.summary?.total_loan || 0 }}
+            </p>
           </div>
         </div>
       </el-card>
@@ -179,11 +192,17 @@ onMounted(() => {
       <el-card shadow="hover" class="summary-card">
         <div class="flex items-center">
           <div class="flex p-3 rounded-full bg-purple-50 mr-4">
-            <el-icon class="text-purple-500 text-xl"><Money /></el-icon>
+            <el-icon class="text-purple-500 text-xl">
+              <Money />
+            </el-icon>
           </div>
           <div>
             <p class="text-sm text-gray-500">Total Repayments Amount</p>
-            <p class="text-2xl font-bold">${{ (apiResponse?.summary?.total_repayment_amount || 0).toFixed(2) }}</p>
+            <p class="text-2xl font-bold">
+              ${{
+                (apiResponse?.summary?.total_repayment_amount || 0).toFixed(2)
+              }}
+            </p>
           </div>
         </div>
       </el-card>
@@ -191,11 +210,15 @@ onMounted(() => {
       <el-card shadow="hover" class="summary-card">
         <div class="flex items-center">
           <div class="flex p-3 rounded-full bg-yellow-50 mr-4">
-            <el-icon class="text-yellow-500 text-xl"><Clock /></el-icon>
+            <el-icon class="text-yellow-500 text-xl">
+              <Clock />
+            </el-icon>
           </div>
           <div>
             <p class="text-sm text-gray-500">Total Repayments Count</p>
-            <p class="text-2xl font-bold">{{ apiResponse?.summary?.total_repayment_count || 0 }}</p>
+            <p class="text-2xl font-bold">
+              {{ apiResponse?.summary?.total_repayment_count || 0 }}
+            </p>
           </div>
         </div>
       </el-card>
@@ -203,11 +226,15 @@ onMounted(() => {
       <el-card shadow="hover" class="summary-card">
         <div class="flex items-center">
           <div class="flex p-3 rounded-full bg-red-50 mr-4">
-            <el-icon class="text-red-500 text-xl"><CircleCheck /></el-icon>
+            <el-icon class="text-red-500 text-xl">
+              <CircleCheck />
+            </el-icon>
           </div>
           <div>
             <p class="text-sm text-gray-500">Late Repayments</p>
-            <p class="text-2xl font-bold">{{ apiResponse?.summary?.total_late_repayment_count || 0 }}</p>
+            <p class="text-2xl font-bold">
+              {{ apiResponse?.summary?.total_late_repayment_count || 0 }}
+            </p>
           </div>
         </div>
       </el-card>
@@ -249,7 +276,11 @@ onMounted(() => {
         </el-table-column>
         <el-table-column label="Status">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small" effect="light">
+            <el-tag
+              :type="getStatusType(row.status)"
+              size="small"
+              effect="light"
+            >
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
@@ -262,7 +293,9 @@ onMounted(() => {
         <el-table-column label="Actions" width="120">
           <template #default="{ row }">
             <el-button size="small" @click="viewDetails(row)">
-              <el-icon class="mr-1"><View /></el-icon>
+              <el-icon class="mr-1">
+                <View />
+              </el-icon>
               Details
             </el-button>
           </template>
@@ -284,17 +317,26 @@ onMounted(() => {
     </el-card>
 
     <!-- Loan Details Dialog -->
-    <el-dialog v-model="showDetailsDialog" :title="`Loan #${selectedLoan?.id}`" width="800px">
+    <el-dialog
+      v-model="showDetailsDialog"
+      :title="`Loan #${selectedLoan?.id}`"
+      width="800px"
+      align-center
+    >
       <div v-if="selectedLoan" class="space-y-6">
         <!-- Loan Information Section -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <h3 class="text-sm font-medium text-gray-500">Loan Repayment</h3>
-            <p class="mt-1 text-lg font-semibold">${{ parseFloat(selectedLoan.loan_repayment).toFixed(2) }}</p>
+            <p class="mt-1 text-lg font-semibold">
+              ${{ parseFloat(selectedLoan.loan_repayment).toFixed(2) }}
+            </p>
           </div>
           <div>
             <h3 class="text-sm font-medium text-gray-500">Interest</h3>
-            <p class="mt-1 text-lg font-semibold">${{ parseFloat(selectedLoan.revenue).toFixed(2) }}</p>
+            <p class="mt-1 text-lg font-semibold">
+              ${{ parseFloat(selectedLoan.revenue).toFixed(2) }}
+            </p>
           </div>
           <div>
             <h3 class="text-sm font-medium text-gray-500">Duration</h3>
@@ -302,7 +344,12 @@ onMounted(() => {
           </div>
           <div>
             <h3 class="text-sm font-medium text-gray-500">Status</h3>
-            <el-tag :type="getStatusType(selectedLoan.status)" size="medium" effect="light" class="mt-1">
+            <el-tag
+              :type="getStatusType(selectedLoan.status)"
+              size="medium"
+              effect="light"
+              class="mt-1"
+            >
               {{ getStatusText(selectedLoan.status) }}
             </el-tag>
           </div>
@@ -310,8 +357,14 @@ onMounted(() => {
 
         <!-- Repayment Schedule Section -->
         <div>
-          <h3 class="text-lg font-medium text-gray-800 mb-4">Repayment Schedule</h3>
-          <el-table :data="selectedLoan.schedule_repayments" border class="w-full">
+          <h3 class="text-lg font-medium text-gray-800 mb-4">
+            Repayment Schedule
+          </h3>
+          <el-table
+            :data="selectedLoan.schedule_repayments"
+            border
+            class="w-full"
+          >
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column label="Due Date" width="150">
               <template #default="{ row }">
@@ -325,14 +378,20 @@ onMounted(() => {
             </el-table-column>
             <el-table-column label="Status" width="120">
               <template #default="{ row }">
-                <el-tag :type="getRepaymentStatusType(row.status)" size="small" effect="light">
+                <el-tag
+                  :type="getRepaymentStatusType(row.status)"
+                  size="small"
+                  effect="light"
+                >
                   {{ getRepaymentStatusText(row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="Paid Date" width="150">
               <template #default="{ row }">
-                {{ row.paid_date ? formatSimpleDate(row.paid_date) : 'Not paid' }}
+                {{
+                  row.paid_date ? formatSimpleDate(row.paid_date) : 'Not paid'
+                }}
               </template>
             </el-table-column>
             <el-table-column label="Actions" width="120" align="center">
@@ -354,17 +413,31 @@ onMounted(() => {
 
         <!-- User Information Section -->
         <div v-if="selectedLoan.user">
-          <h3 class="text-lg font-medium text-gray-800 mb-4">User Information</h3>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">
+            User Information
+          </h3>
           <div class="bg-gray-50 p-4 rounded-md">
-            <p><span class="font-medium">Email:</span> {{ selectedLoan.user.email }}</p>
-            <p><span class="font-medium">Phone:</span> {{ selectedLoan.user.phone }}</p>
-            <p><span class="font-medium">Verified:</span> {{ selectedLoan.user.phone_verified_at ? 'Yes' : 'No' }}</p>
+            <p>
+              <span class="font-medium">Email:</span>
+              {{ selectedLoan.user.email }}
+            </p>
+            <p>
+              <span class="font-medium">Phone:</span>
+              {{ selectedLoan.user.phone }}
+            </p>
+            <p>
+              <span class="font-medium">Verified:</span>
+              {{ selectedLoan.user.phone_verified_at ? 'Yes' : 'No' }}
+            </p>
           </div>
         </div>
       </div>
 
       <template #footer>
-        <el-button type="primary" @click="showDetailsDialog = false">Close</el-button>
+        <el-button type="primary" @click="showDetailsDialog = false"
+        >Close
+        </el-button
+        >
       </template>
     </el-dialog>
   </div>

@@ -17,6 +17,7 @@ const isEditing = ref(false)
 const editForm = ref({
   rate: 0
 })
+const showPasswordDialog = ref(false)
 
 // Store
 const interestRateStore = useInterestRateStore()
@@ -42,16 +43,33 @@ const startEditing = () => {
 
 const cancelEditing = () => {
   isEditing.value = false
+  password.value = ''
 }
 
 const saveInterestRate = async () => {
   saving.value = true
   try {
+
+    const { value: password } = await ElMessageBox.prompt(
+      'Please enter your password to confirm',
+      'Password Confirmation',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        inputType: 'password',
+        inputPattern: /\S+/, // At least one non-whitespace character
+        inputErrorMessage: 'Password is required',
+      },
+    )
+
     const updatedRate = await interestRateStore.store({
-      rate: editForm.value.rate
+      rate: editForm.value.rate,
+      password: password
     })
     interestRate.value = updatedRate
     isEditing.value = false
+    password.value = ''
+    showPasswordDialog.value = false
     fetchInterestRate()
     ElMessage.success('Interest rate updated successfully')
   } catch (error) {
@@ -183,5 +201,9 @@ onMounted(() => {
 :deep(.el-input-number__decrease),
 :deep(.el-input-number__increase) {
   @apply h-auto;
+}
+
+.dialog-footer {
+  @apply flex justify-end;
 }
 </style>

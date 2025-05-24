@@ -17,13 +17,12 @@ export const useAdminRequestLoanStore = defineStore('admin_request_loans', () =>
   }
 
   //approve
-  const approve = async (id) => {
+  const approve = async (id, req) => {
     try {
-      const { data } = await adminRequestLoanService.approve(id)
+      const { data } = await adminRequestLoanService.approve(id, req)
       return data
     } catch (error) {
-      ElMessage.error(error.message || 'Approve Loan failed')
-      throw new Error(`Approve Loan failed: ${error.message || 'Unknown error'}`)
+      throw error
     }
   }
 
@@ -33,8 +32,7 @@ export const useAdminRequestLoanStore = defineStore('admin_request_loans', () =>
       const { data } = await adminRequestLoanService.reject(id, payload)
       return data
     } catch (error) {
-      ElMessage.error(error.message || 'Reject Loan failed')
-      throw new Error(`Reject Loan failed: ${error.message || 'Unknown error'}`)
+      throw error
     }
   }
 

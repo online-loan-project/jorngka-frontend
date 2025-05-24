@@ -70,6 +70,6 @@ export const useHttp = async (url, options = {}) => {
       })
     }
 
-    throw error
+    throw error.data.alert.message
   }
 }

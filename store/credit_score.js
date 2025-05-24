@@ -17,9 +17,9 @@ export const useCreditScoreStore = defineStore('credit-score', () => {
   }
 
   //store
-  const reset = async (params) => {
+  const reset = async (params, req) => {
     try {
-      const { data } = await creditScoreService.reset(params)
+      const { data } = await creditScoreService.reset(params, req)
       creditScore.value = data || {}
       return data
     } catch (error) {
