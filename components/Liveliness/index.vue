@@ -64,11 +64,8 @@ const successButton = async () => {
       throw new Error(response.message || 'Verification failed. Please try again.')
     }
 
-    cookies.remove('access_token')
-    cookies.remove('user')
-    cookies.remove('tokenType')
     // Success handling
-    setTimeout(() => navigateTo('/login'), 1000)
+    setTimeout(() => navigateTo('/face-Verify'), 1000)
 
   } catch (error) {
     console.error('Liveliness verification failed:', error)
