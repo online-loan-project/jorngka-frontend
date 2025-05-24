@@ -205,7 +205,6 @@ const submitNid = async () => {
           <div v-if="isLoading" class="mt-4">
             <div class="flex justify-between text-sm text-gray-600 mb-1">
               <span>Uploading...</span>
-              <span>{{ uploadProgress }}%</span>
             </div>
             <el-progress
               :percentage="uploadProgress"
