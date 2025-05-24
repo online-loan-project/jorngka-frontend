@@ -90,8 +90,6 @@ const submitNid = async () => {
     uploadProgress.value = 100
     ElMessage.success('NID verification submitted successfully!')
     isSubmitNid.value = false
-
-    navigateTo('/liveliness')
   } catch (error) {
     errors.value.general = error || 'An error occurred during verification'
     ElMessage.error(errors.value.general)
