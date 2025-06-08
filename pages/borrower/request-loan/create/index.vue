@@ -9,12 +9,11 @@ definePageMeta({
 })
 
 const requestLoanStore = useRequestLoanStore()
-const { storeNid, storeRequestLoan } = requestLoanStore
+const { storeRequestLoan } = requestLoanStore
 
 const currentStep = ref(1)
 const steps = [
   { title: 'Personal Data', icon: 'User' },
-  { title: 'NID Verification', icon: 'Postcard' },
   { title: 'Income Information', icon: 'Money' },
   { title: 'Loan Details', icon: 'Document' },
 ]
@@ -25,21 +24,12 @@ if (!user || !user.phone) {
   navigateTo('/login')
 }
 
-const isSubmitNid = ref(true)
-
 const personalData = ref({
   fullName: user.profile.first_name + ' ' + user.profile.last_name,
   email: user.email,
   phone: user.phone,
   address: user.profile.address,
   dateOfBirth: user.profile.dob,
-})
-
-const nidData = ref({
-  nidNumber: '',
-  nidFirstName: '',
-  nidLastName: '',
-  nidImage: null,
 })
 
 const incomeData = ref({
@@ -55,10 +45,6 @@ const loanData = ref({
   loanAmount: '',
   loanDuration: 6, // months
   loanType: 'personal',
-})
-
-const nidPreview = ref({
-  image: null,
 })
 
 // Validation rules
@@ -83,20 +69,6 @@ const rules = {
     message: `Minimum length should be ${min}`,
     trigger: 'blur',
   }),
-  imageFile: {
-    validator: (rule, value, callback) => {
-      if (!value) {
-        callback(new Error('Please upload an image'))
-      } else if (!value.type.match('image.*')) {
-        callback(new Error('Please upload an image file'))
-      } else if (value.size > 5 * 1024 * 1024) {
-        callback(new Error('File size should not exceed 5MB'))
-      } else {
-        callback()
-      }
-    },
-    trigger: 'change',
-  },
   bankStatementFile: {
     validator: (rule, value, callback) => {
       if (!value) {
@@ -107,33 +79,6 @@ const rules = {
     },
     trigger: 'change',
   },
-}
-
-const handleFileUpload = (file) => {
-  if (!file.type.match('image.*')) {
-    ElMessage.error('Please upload an image file')
-    return false
-  }
-
-  const maxSize = 5 * 1024 * 1024 // 5MB
-  if (file.size > maxSize) {
-    ElMessage.error('File size should not exceed 5MB')
-    return false
-  }
-
-  const reader = new FileReader()
-
-  reader.onload = (e) => {
-    nidData.value.nidImage = file
-    nidPreview.value.image = e.target.result
-  }
-
-  reader.onerror = () => {
-    ElMessage.error('Error reading file. Please try again.')
-  }
-
-  reader.readAsDataURL(file)
-  return true
 }
 
 const handleBankStatementUpload = (file) => {
@@ -152,20 +97,7 @@ const validateStep1 = () => {
   return true
 }
 
-const validateStep2 = async () => {
-  if (!nidData.value.nidImage) {
-    ElMessage.error('Please upload your NID image')
-    return false
-  }
-
-  if (isSubmitNid.value) {
-    await submitNid()
-  }
-
-  return !isSubmitNid.value
-}
-
-const validateStep3 = () => {
+const validateStep2 = () => {
   if (!incomeData.value.position) {
     ElMessage.error('Please enter your position')
     return false
@@ -194,7 +126,7 @@ const validateStep3 = () => {
   return true
 }
 
-const validateStep4 = () => {
+const validateStep3 = () => {
   if (!loanData.value.loanAmount || loanData.value.loanAmount < 100) {
     ElMessage.error('Please enter a valid loan amount (minimum $100)')
     return false
@@ -216,10 +148,7 @@ const nextStep = async () => {
       isValid = validateStep1()
       break
     case 2:
-      isValid = await validateStep2()
-      break
-    case 3:
-      isValid = validateStep3()
+      isValid = validateStep2()
       break
   }
 
@@ -234,28 +163,8 @@ const prevStep = () => {
   }
 }
 
-const submitNid = async () => {
-  try {
-    const formData = new FormData()
-    formData.append('nid_image', nidData.value.nidImage)
-
-    const respond = await storeNid(formData)
-    nidData.value.nidNumber = respond.nid_number
-    nidData.value.nidFirstName = respond.first_name
-    nidData.value.nidLastName = respond.last_name
-
-    ElMessage.success('NID verification submitted successfully!')
-    isSubmitNid.value = false
-    return true
-  } catch (error) {
-    console.error('Error submitting NID:', error)
-    ElMessage.error('Failed to verify NID. Please try again.')
-    return false
-  }
-}
-
 const submitLoanRequest = async () => {
-  if (!validateStep4()) {
+  if (!validateStep3()) {
     return
   }
 
@@ -269,12 +178,6 @@ const submitLoanRequest = async () => {
 
     if (incomeData.value.bankStatement) {
       formData.append('bank_statement', incomeData.value.bankStatement)
-    }
-
-    // Append NID data
-    formData.append('nid_number', nidData.value.nidNumber)
-    if (nidData.value.nidImage) {
-      formData.append('nid_image', nidData.value.nidImage)
     }
 
     // Append loan data
@@ -302,10 +205,10 @@ const submitLoanRequest = async () => {
     <!-- Stepper -->
     <el-steps :active="currentStep" align-center class="mb-8">
       <el-step
-        v-for="(step, index) in steps"
-        :key="index"
-        :title="step.title"
-        :icon="step.icon"
+          v-for="(step, index) in steps"
+          :key="index"
+          :title="step.title"
+          :icon="step.icon"
       />
     </el-steps>
 
@@ -314,55 +217,55 @@ const submitLoanRequest = async () => {
       <h2 class="text-xl font-semibold mb-6">Personal Information</h2>
 
       <el-form
-        :model="personalData"
-        label-width="150px"
-        label-position="top"
-        :rules="rules"
+          :model="personalData"
+          label-width="150px"
+          label-position="top"
+          :rules="rules"
       >
         <el-form-item label="Full Name" prop="fullName" :rules="rules.required">
           <el-input
-            v-model="personalData.fullName"
-            placeholder="Enter your full name"
-            disabled
+              v-model="personalData.fullName"
+              placeholder="Enter your full name"
+              disabled
           />
         </el-form-item>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <el-form-item label="Email Address" prop="email" :rules="[rules.required, rules.email]">
             <el-input
-              v-model="personalData.email"
-              type="text"
-              placeholder="your@email.com"
-              disabled
+                v-model="personalData.email"
+                type="text"
+                placeholder="your@email.com"
+                disabled
             />
           </el-form-item>
 
           <el-form-item label="Phone Number" prop="phone" :rules="rules.required">
             <el-input
-              v-model="personalData.phone"
-              placeholder="092000000"
-              disabled
+                v-model="personalData.phone"
+                placeholder="092000000"
+                disabled
             />
           </el-form-item>
         </div>
 
         <el-form-item label="Date of Birth" prop="dateOfBirth" :rules="rules.required">
           <el-date-picker
-            v-model="personalData.dateOfBirth"
-            type="date"
-            placeholder="Select your date of birth"
-            class="w-full"
-            disabled
+              v-model="personalData.dateOfBirth"
+              type="date"
+              placeholder="Select your date of birth"
+              class="w-full"
+              disabled
           />
         </el-form-item>
 
         <el-form-item label="Address" prop="address" :rules="rules.required">
           <el-input
-            v-model="personalData.address"
-            type="textarea"
-            :rows="3"
-            placeholder="Enter your full address"
-            disabled
+              v-model="personalData.address"
+              type="textarea"
+              :rows="3"
+              placeholder="Enter your full address"
+              disabled
           />
         </el-form-item>
       </el-form>
@@ -371,105 +274,21 @@ const submitLoanRequest = async () => {
         <el-button @click="navigateTo('/borrower/request-loan')"> Back </el-button>
 
         <el-button type="primary" @click="nextStep">
-          Continue to NID Verification
+          Continue to Income Information
           <i class="i-material-symbols-arrow-forward ml-2"></i>
         </el-button>
       </div>
     </div>
 
-    <!-- Step 2: NID Verification -->
+    <!-- Step 2: Income Information -->
     <div v-if="currentStep === 2" class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-6">National ID Verification</h2>
-
-      <el-form :model="nidData" label-width="150px" label-position="top">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <el-form-item
-              label="NID Front Side"
-              prop="nidImage"
-              :rules="isSubmitNid ? rules.imageFile : []"
-            >
-              <el-upload
-                action="#"
-                :auto-upload="false"
-                :show-file-list="false"
-                :on-change="(file) => handleFileUpload(file.raw)"
-                accept="image/*"
-                class="upload-area"
-              >
-                <div v-if="nidPreview.image" class="preview-container">
-                  <img :src="nidPreview.image" class="preview-image" />
-                  <div class="preview-overlay">
-                    <i class="i-material-symbols-edit text-white text-2xl"></i>
-                  </div>
-                </div>
-                <div v-else class="upload-placeholder">
-                  <i
-                    class="i-material-symbols-upload text-3xl text-gray-400 mb-2"
-                  ></i>
-                  <p>Upload Front Side</p>
-                </div>
-              </el-upload>
-            </el-form-item>
-          </div>
-          <div class="bg-blue-50 rounded-lg p-4 mb-6">
-            <div class="flex items-start">
-              <i class="i-material-symbols-lightbulb-outline text-blue-500 text-xl mr-3 mt-0.5"></i>
-              <div>
-                <h4 class="font-medium text-blue-800 mb-1">Verification Tips</h4>
-                <ul class="text-sm text-blue-600 list-disc pl-5 space-y-1">
-                  <li>Ensure all details are clearly visible</li>
-                  <li>Take photo in well-lit environment</li>
-                  <li>Avoid glare and shadows on the document</li>
-                  <li>Upload high-resolution images (minimum 800px width)</li>
-                  <li>Upload in image format (jpg, png)</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        <el-form-item v-if="nidData.nidNumber" label="Verified NID Result">
-          <div class="bg-green-100 border border-green-300 text-green-800 rounded-lg px-4 py-3 shadow-sm space-y-1">
-            <div class="text-base font-semibold">
-              NID Number: {{ nidData.nidNumber }}
-            </div>
-            <div class="text-sm">
-              First Name: {{ nidData.nidFirstName }}
-            </div>
-            <div class="text-sm">
-              Last Name: {{ nidData.nidLastName }}
-            </div>
-          </div>
-        </el-form-item>
-      </el-form>
-
-      <div class="flex justify-between mt-6">
-        <el-button @click="prevStep"> Back </el-button>
-
-        <div>
-          <div v-if="isSubmitNid" class="flex justify-end mt-6">
-            <el-button type="primary" @click="submitNid">
-              Submit to NID Verification
-              <i class="i-material-symbols-arrow-forward ml-2"></i>
-            </el-button>
-          </div>
-          <el-button v-else type="primary" @click="nextStep">
-            Continue to Income Information
-            <i class="i-material-symbols-arrow-forward ml-2"></i>
-          </el-button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 3: Income Information -->
-    <div v-if="currentStep === 3" class="bg-white rounded-lg shadow p-6">
       <h2 class="text-xl font-semibold mb-6">Income Information</h2>
 
       <el-form
-        :model="incomeData"
-        label-width="150px"
-        label-position="top"
-        :rules="rules"
+          :model="incomeData"
+          label-width="150px"
+          label-position="top"
+          :rules="rules"
       >
         <el-form-item label="Employment Type" prop="employeeType" :rules="rules.required">
           <el-radio-group v-model="incomeData.employeeType">
@@ -481,62 +300,62 @@ const submitLoanRequest = async () => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <el-form-item label="Position" prop="position" :rules="rules.required">
             <el-input
-              v-model="incomeData.position"
-              placeholder="Your position/job title"
+                v-model="incomeData.position"
+                placeholder="Your position/job title"
             />
           </el-form-item>
 
           <el-form-item
-            label="Monthly Income (USD)"
-            prop="monthlyIncome"
-            :rules="[
+              label="Monthly Income (USD)"
+              prop="monthlyIncome"
+              :rules="[
               rules.required,
               rules.number,
               { type: 'number', min: 100, message: 'Minimum income must be at least $100' }
             ]"
           >
             <el-input-number
-              v-model="incomeData.monthlyIncome"
-              :min="100"
-              :step="100"
-              controls-position="right"
-              class="w-full"
+                v-model="incomeData.monthlyIncome"
+                :min="100"
+                :step="100"
+                controls-position="right"
+                class="w-full"
             />
           </el-form-item>
         </div>
 
         <el-form-item label="Occupation" prop="occupation" :rules="rules.required">
           <el-input
-            v-model="incomeData.occupation"
-            placeholder="Your profession"
+              v-model="incomeData.occupation"
+              placeholder="Your profession"
           />
         </el-form-item>
 
         <el-form-item
-          v-if="incomeData.employeeType === 'employer'"
-          label="Employer/Company Name"
-          prop="employer"
-          :rules="incomeData.employeeType === 'employer' ? rules.required : []"
+            v-if="incomeData.employeeType === 'employer'"
+            label="Employer/Company Name"
+            prop="employer"
+            :rules="incomeData.employeeType === 'employer' ? rules.required : []"
         >
           <el-input
-            v-model="incomeData.employer"
-            placeholder="Where you work"
+              v-model="incomeData.employer"
+              placeholder="Where you work"
           />
         </el-form-item>
 
         <el-form-item
-          v-if="incomeData.employeeType === 'employer'"
-          label="Bank Statement (Last 3 months)"
-          prop="bankStatement"
-          :rules="incomeData.employeeType === 'employer' ? rules.bankStatementFile : []"
+            v-if="incomeData.employeeType === 'employer'"
+            label="Bank Statement (Last 3 months)"
+            prop="bankStatement"
+            :rules="incomeData.employeeType === 'employer' ? rules.bankStatementFile : []"
         >
           <el-upload
-            action="#"
-            :auto-upload="false"
-            :show-file-list="false"
-            :on-change="handleBankStatementUpload"
-            accept=".pdf,.jpg,.jpeg,.png"
-            class="bank-statement-upload"
+              action="#"
+              :auto-upload="false"
+              :show-file-list="false"
+              :on-change="handleBankStatementUpload"
+              accept=".pdf,.jpg,.jpeg,.png"
+              class="bank-statement-upload"
           >
             <el-button type="primary">
               <i class="i-material-symbols-upload mr-2"></i>
@@ -566,34 +385,34 @@ const submitLoanRequest = async () => {
       </div>
     </div>
 
-    <!-- Step 4: Loan Details -->
-    <div v-if="currentStep === 4" class="bg-white rounded-lg shadow p-6">
+    <!-- Step 3: Loan Details -->
+    <div v-if="currentStep === 3" class="bg-white rounded-lg shadow p-6">
       <h2 class="text-xl font-semibold mb-6">Loan Details</h2>
 
       <el-form :model="loanData" label-width="150px" label-position="top" :rules="rules">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <el-form-item
-            label="Loan Amount (USD)"
-            prop="loanAmount"
-            :rules="[
+              label="Loan Amount (USD)"
+              prop="loanAmount"
+              :rules="[
               rules.required,
               rules.number,
               { type: 'number', min: 100, message: 'Minimum loan amount must be at least $100' }
             ]"
           >
             <el-input-number
-              v-model="loanData.loanAmount"
-              :min="100"
-              :step="100"
-              controls-position="right"
-              class="w-full"
+                v-model="loanData.loanAmount"
+                :min="100"
+                :step="100"
+                controls-position="right"
+                class="w-full"
             />
           </el-form-item>
 
           <el-form-item
-            label="Loan Duration (Months)"
-            prop="loanDuration"
-            :rules="[
+              label="Loan Duration (Months)"
+              prop="loanDuration"
+              :rules="[
               rules.required,
               rules.number,
               { type: 'number', min: 1, max: 12, message: 'Loan duration must be between 1-12 months' }
@@ -601,13 +420,13 @@ const submitLoanRequest = async () => {
           >
             <div class="space-y-2">
               <el-input-number
-                v-model="loanData.loanDuration"
-                :min="1"
-                :max="12"
-                :step="1"
-                controls-position="right"
-                class="w-full"
-                size="large"
+                  v-model="loanData.loanDuration"
+                  :min="1"
+                  :max="12"
+                  :step="1"
+                  controls-position="right"
+                  class="w-full"
+                  size="large"
               />
               <div class="flex items-start text-sm text-gray-500 mt-1">
                 <el-icon class="mr-1.5 mt-0.5"><info-filled /></el-icon>

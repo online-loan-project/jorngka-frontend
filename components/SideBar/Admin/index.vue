@@ -15,7 +15,8 @@ import {
   User,
   TrendCharts,
   Collection,
-  Notebook
+  Notebook,
+  DataAnalysis
 } from '@element-plus/icons-vue'
 
 const isOpen = ref(true)
@@ -43,6 +44,7 @@ const menuItems = [
   },
   { icon: TrendCharts, label: 'Credit Score', to: '/admin/credit-score' },
   { icon: User, label: 'Borrower Management', to: '/admin/borrower-management' },
+  { icon: DataAnalysis, label: 'Credit', to: '/admin/credit' },
   { icon: Setting, label: 'Settings', to: '/admin/settings' },
   { icon: SwitchButton, label: 'Logout', to: '/admin/logout', class: 'mt-4 border-t border-gray-200 pt-2' }
 ]

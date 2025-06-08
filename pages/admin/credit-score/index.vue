@@ -40,13 +40,17 @@ const pageSize = ref(10);
 
 const creditScoreStore = useCreditScoreStore()
 const { index, reset, update } = creditScoreStore
+const searchQuery = ref('')
 
 const fetchData = async (page = 1) => {
   loading.value = true;
   try {
-    const response = await index({page: page});
+    const params = { page: page };
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
+    }
+    const response = await index(params);
     apiResponse.value = response;
-    // Update pagination
     currentPage.value = page;
   } finally {
     loading.value = false;
@@ -110,12 +114,12 @@ const viewDetails = (loan) => {
 };
 
 const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  const options = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+  return new Date(dateString).toLocaleDateString('en-US', options);
 };
 
 const statusBadgeClass = (status) => {
-  return status ? 'approved' : 'rejected';
+  return status === 'approved' ? 'success' : 'danger';
 };
 
 const navigateToCreate = () => {
@@ -138,137 +142,143 @@ onMounted(() => {
 </script>
 
 <template>
-  <aside
-    class="h-screen bg-gradient-to-b from-indigo-50 to-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out flex flex-col"
-    :class="{ 'w-64': isOpen, 'w-20': !isOpen }"
-  >
-    <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-100 bg-white/50 backdrop-blur-sm">
-      <transition name="slide-fade" mode="out-in">
-        <h1
-          v-if="isOpen"
-          class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-500 bg-clip-text text-transparent"
-        >
-          JORNG-KA
-          <span class="block text-xs font-normal text-gray-500">Digital Loan Platform</span>
-        </h1>
-      </transition>
-      <el-button
-        :icon="Menu"
-        size="small"
-        @click="isOpen = !isOpen"
-        class="!bg-transparent !border-0 hover:!bg-indigo-100 !rounded-full !p-2 !text-indigo-600"
-      />
+  <div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">Credit Score Management</h1>
+      <div class="flex gap-2">
+        <el-input
+            v-model="searchQuery"
+            placeholder="Search by User ID"
+            clearable
+            style="width: 300px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+        />
+        <el-button type="primary" :icon="Refresh" @click="fetchData">Refresh</el-button>
+      </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto py-4 px-2">
-      <ul class="space-y-1">
-        <li v-for="(item, index) in menuItems" :key="index" :class="item.class || ''">
-          <!-- Menu Item -->
-          <div
-            class="flex items-center px-3 py-3 rounded-lg cursor-pointer transition-all duration-200 group relative"
-            :class="{
-              'justify-center': !isOpen,
-              'bg-indigo-100 text-indigo-700': activeItem === item.label,
-              'hover:bg-indigo-50 hover:text-indigo-600': activeItem !== item.label
-            }"
-            @click="item.children ? toggleSubmenu(item.label) : goTo(item.to, item.label)"
-          >
-            <!-- Active indicator -->
-            <div
-              v-if="activeItem === item.label"
-              class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r-full"
-            ></div>
+    <el-card shadow="never" class="mb-6">
+      <el-table :data="apiResponse.data" v-loading="loading" style="width: 100%">
+        <el-table-column prop="user_id" label="User ID" width="120" />
+        <el-table-column prop="name" label="Name" />
+        <el-table-column prop="score" label="Score" width="120">
+          <template #default="{row}">
+            <el-tag :type="row.score >= 700 ? 'success' : row.score >= 600 ? 'warning' : 'danger'">
+              {{ row.score }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="Status" width="120">
+          <template #default="{row}">
+            <el-tag :type="row.status ? 'success' : 'danger'">
+              {{ row.status ? 'Approved' : 'Rejected' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="last_update" label="Last Updated" width="180">
+          <template #default="{row}">
+            {{ formatDate(row.last_update) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="Actions" width="180" fixed="right">
+          <template #default="{row}">
+            <el-button size="small" :icon="View" @click="viewDetails(row)">View</el-button>
+            <el-button size="small" :icon="Edit" type="primary" @click="openEditDialog(row)">Edit</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-            <el-icon
-              :size="20"
-              class="transition-all z-10"
-              :class="{
-                'mr-3': isOpen,
-                'text-indigo-500 group-hover:text-indigo-600': activeItem !== item.label,
-                'text-indigo-600': activeItem === item.label
-              }"
-            >
-              <component :is="item.icon" />
-            </el-icon>
+      <div class="mt-4 flex justify-between items-center">
+        <div class="text-sm text-gray-500">
+          Showing {{ apiResponse.from }} to {{ apiResponse.to }} of {{ apiResponse.total }} entries
+        </div>
+        <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total="apiResponse.total"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="prev, pager, next, sizes"
+            @current-change="fetchData"
+            @size-change="fetchData"
+        />
+      </div>
+    </el-card>
 
-            <transition name="slide-fade" mode="out-in">
-              <span
-                v-if="isOpen"
-                class="text-sm font-medium flex-1 z-10"
-                :class="{
-                  'font-semibold': activeItem === item.label
-                }"
-              >
-                {{ item.label }}
-              </span>
-            </transition>
-
-            <transition name="rotate" mode="out-in">
-              <el-icon
-                v-if="item.children && isOpen"
-                class="transition-transform duration-200 z-10"
-                :class="{
-                  'transform rotate-90 text-indigo-600': activeSubmenu === item.label,
-                  'text-gray-400': activeSubmenu !== item.label
-                }"
-              >
-                <ArrowRight />
-              </el-icon>
-            </transition>
+    <!-- View Details Dialog -->
+    <el-dialog v-model="showDetailsDialog" title="Credit Score Details" width="50%">
+      <div v-if="selectedLoan" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <h3 class="font-medium text-gray-500">User ID</h3>
+            <p>{{ selectedLoan.user_id }}</p>
           </div>
-
-          <!-- Submenu -->
-          <transition
-            enter-active-class="transition-all duration-300 ease-out"
-            enter-from-class="opacity-0 max-h-0 -translate-y-2"
-            enter-to-class="opacity-100 max-h-40 translate-y-0"
-            leave-active-class="transition-all duration-200 ease-in"
-            leave-from-class="opacity-100 max-h-40 translate-y-0"
-            leave-to-class="opacity-0 max-h-0 -translate-y-2"
-          >
-            <ul
-              v-if="item.children && activeSubmenu === item.label && isOpen"
-              class="ml-2 mt-1 space-y-1 overflow-hidden"
-            >
-              <li
-                v-for="(child, cIndex) in item.children"
-                :key="cIndex"
-                class="flex items-center px-3 py-2 text-sm rounded-md transition cursor-pointer"
-                :class="{
-                  'bg-indigo-50 text-indigo-600': activeItem === child.label,
-                  'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600': activeItem !== child.label
-                }"
-                @click="goTo(child.to, child.label)"
-              >
-                <el-icon :size="16" class="mr-2">
-                  <component :is="child.icon" />
-                </el-icon>
-                <span>{{ child.label }}</span>
-              </li>
-            </ul>
-          </transition>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- Collapsed Tooltips -->
-    <div v-if="!isOpen" class="fixed left-20 ml-1 z-50">
-      <div
-        v-for="item in menuItems.filter(i => !i.children)"
-        :key="item.label"
-        class="relative group"
-      >
-        <div class="hidden group-hover:block absolute left-full top-1/2 transform -translate-y-1/2 ml-2">
-          <div class="bg-indigo-600 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
-            {{ item.label }}
-            <div class="absolute right-full top-1/2 w-2 h-2 -mt-1 -mr-1 rotate-45 bg-indigo-600"></div>
+          <div>
+            <h3 class="font-medium text-gray-500">Name</h3>
+            <p>{{ selectedLoan.name }}</p>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-500">Score</h3>
+            <p>
+              <el-tag :type="selectedLoan.score >= 700 ? 'success' : selectedLoan.score >= 600 ? 'warning' : 'danger'">
+                {{ selectedLoan.score }}
+              </el-tag>
+            </p>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-500">Status</h3>
+            <p>
+              <el-tag :type="selectedLoan.status ? 'success' : 'danger'">
+                {{ selectedLoan.status ? 'Approved' : 'Rejected' }}
+              </el-tag>
+            </p>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-500">Last Updated</h3>
+            <p>{{ formatDate(selectedLoan.last_update) }}</p>
           </div>
         </div>
       </div>
-    </div>
-  </aside>
+      <template #footer>
+        <el-button @click="showDetailsDialog = false">Close</el-button>
+        <el-button type="danger" @click="openResetConfirmDialog">Reset Score</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Edit Dialog -->
+    <el-dialog v-model="showEditDialog" title="Edit Credit Score" width="50%">
+      <el-form :model="editForm" label-width="120px" :require-asterisk-position="'right'">
+        <el-form-item label="Score">
+          <el-input-number v-model="editForm.score" :min="0" :max="100" />
+        </el-form-item>
+        <el-form-item label="Status">
+          <el-select v-model="editForm.status" placeholder="Select status">
+            <el-option :value="1" label="Approved" />
+            <el-option :value="0" label="Rejected" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Password" required>
+          <el-input v-model="password" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditDialog = false">Cancel</el-button>
+        <el-button type="primary" @click="updateCredit">Save</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Reset Confirmation Dialog -->
+    <el-dialog v-model="showResetConfirmDialog" title="Confirm Reset" width="50%">
+      <p>Are you sure you want to reset this user's credit score? This action cannot be undone.</p>
+      <el-form-item label="Password" class="mt-4" required>
+        <el-input v-model="password" type="password" show-password />
+      </el-form-item>
+      <template #footer>
+        <el-button @click="showResetConfirmDialog = false">Cancel</el-button>
+        <el-button type="danger" @click="resetCredit">Confirm Reset</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <style scoped>

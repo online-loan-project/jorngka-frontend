@@ -1,4 +1,4 @@
-<script setup>
+  <script setup>
 import { useAdminLoanStore } from '~/store/admin/admin_loan.js'
 
 definePageMeta({

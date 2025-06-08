@@ -432,51 +432,6 @@ onMounted(() => {
 
         <!-- NID and Income Information in same row -->
         <div class="flex flex-col md:flex-row gap-4">
-          <!-- National ID Information -->
-          <el-card shadow="never" class="flex-1">
-            <template #header>
-              <div class="font-medium">National ID Information</div>
-            </template>
-            <div class="space-y-4">
-              <div>
-                <h3 class="text-sm font-medium text-gray-500">NID Number</h3>
-                <p class="mt-1">
-                  {{ selectedLoan.nid_information?.nid_number || 'N/A' }}
-                </p>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 class="text-sm font-medium text-gray-500">Front Image</h3>
-                  <div class="mt-1">
-                    <el-image
-                      v-if="selectedLoan.nid_information?.nid_image"
-                      :src="selectedLoan.nid_information.nid_image"
-                      :preview-src-list="[
-                        selectedLoan.nid_information.nid_image,
-                      ]"
-                      fit="contain"
-                      class="w-full h-32 border rounded"
-                    >
-                      <template #error>
-                        <div
-                          class="flex items-center justify-center h-32 text-gray-400"
-                        >
-                          Image not available
-                        </div>
-                      </template>
-                    </el-image>
-                    <div
-                      v-else
-                      class="flex items-center justify-center h-32 text-gray-400"
-                    >
-                      Not provided
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-card>
-
           <!-- Income Information -->
           <el-card shadow="never" class="flex-1">
             <template #header>
@@ -520,7 +475,7 @@ onMounted(() => {
                     :preview-src-list="[
                       selectedLoan.income_information.bank_statement,
                     ]"
-                    fit="cover"
+                    fit="contain"
                     class="w-full h-32 border rounded"
                   >
                     <template #error>
@@ -599,70 +554,68 @@ onMounted(() => {
     </el-dialog>
 
     <!-- Approve Confirmation Dialog -->
-    <el-dialog
-      v-model="showApproveConfirm"
-      title="Confirm Approval"
-      width="400px"
-      :close-on-click-modal="false"
-    >
-      <p>Are you sure you want to approve this loan request?</p>
+    <el-dialog v-model="showApproveConfirm" title="Confirm Approval" width="400px" :close-on-click-modal="false">
       <el-form
-        :require-asterisk-position="'right'" class="mt-4">
-        <el-form-item
-          label="Password"
-          required
-          label-position="top"
-        >
+          @submit.native.prevent="handleApprove"
+          :require-asterisk-position="'right'"
+          class="mt-4"
+      >
+        <el-form-item label="Password" required label-position="top">
           <el-input
-            v-model="password"
-            type="password"
-            placeholder="Enter your password"
-            clearable
+              v-model="password"
+              type="password"
+              placeholder="Enter your password"
+              clearable
+              @keyup.enter="handleApprove"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showApproveConfirm = false">Cancel</el-button>
-        <el-button type="success" @click="handleApprove" :loading="loading" :disabled="!password">
+        <el-button
+            type="success"
+            @click="handleApprove"
+            :loading="loading"
+            :disabled="!password"
+        >
           Confirm Approve
         </el-button>
       </template>
     </el-dialog>
 
     <!-- Reject Dialog with Reason -->
-    <el-dialog
-      v-model="showRejectDialog"
-      title="Reject Loan Request"
-      width="500px"
-      :close-on-click-modal="false"
-    >
-      <el-form :require-asterisk-position="'right'">
+    <el-dialog v-model="showRejectDialog" title="Reject Loan Request" width="500px" :close-on-click-modal="false">
+      <el-form
+          @submit.native.prevent="handleReject"
+          :require-asterisk-position="'right'"
+      >
         <el-form-item label="Rejection Reason" required>
           <el-input
-            v-model="rejectReason"
-            type="textarea"
-            :rows="4"
-            placeholder="Please provide the reason for rejection"
-            clearable
+              v-model="rejectReason"
+              type="textarea"
+              :rows="4"
+              placeholder="Please provide the reason for rejection"
+              clearable
           />
         </el-form-item>
-
-        <el-form-item
-          label="Password"
-          required
-          label-position="top"
-        >
+        <el-form-item label="Password" required label-position="top">
           <el-input
-            v-model="password"
-            type="password"
-            placeholder="Enter your password"
-            clearable
+              v-model="password"
+              type="password"
+              placeholder="Enter your password"
+              clearable
+              @keyup.enter="handleReject"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showRejectDialog = false">Cancel</el-button>
-        <el-button type="danger" @click="handleReject" :loading="loading" :disabled="!rejectReason || !password">
+        <el-button
+            type="danger"
+            @click="handleReject"
+            :loading="loading"
+            :disabled="!rejectReason || !password"
+        >
           Confirm Reject
         </el-button>
       </template>

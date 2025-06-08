@@ -73,7 +73,7 @@ const saveInterestRate = async () => {
     fetchInterestRate()
     ElMessage.success('Interest rate updated successfully')
   } catch (error) {
-    ElMessage.error(error.response?.data?.message || 'Failed to update rate')
+    throw error
   } finally {
     saving.value = false
   }

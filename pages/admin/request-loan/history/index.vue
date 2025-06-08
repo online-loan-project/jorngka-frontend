@@ -409,51 +409,6 @@ onMounted(() => {
 
         <!-- NID and Income Information in same row -->
         <div class="flex flex-col md:flex-row gap-4">
-          <!-- National ID Information -->
-          <el-card shadow="never" class="flex-1">
-            <template #header>
-              <div class="font-medium">National ID Information</div>
-            </template>
-            <div class="space-y-4">
-              <div>
-                <h3 class="text-sm font-medium text-gray-500">NID Number</h3>
-                <p class="mt-1">
-                  {{ selectedLoan.nid_information?.nid_number || 'N/A' }}
-                </p>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 class="text-sm font-medium text-gray-500">Front Image</h3>
-                  <div class="mt-1">
-                    <el-image
-                      v-if="selectedLoan.nid_information?.nid_image"
-                      :src="selectedLoan.nid_information.nid_image"
-                      :preview-src-list="[
-                        selectedLoan.nid_information.nid_image,
-                      ]"
-                      fit="contain"
-                      class="w-full h-32 border rounded"
-                    >
-                      <template #error>
-                        <div
-                          class="flex items-center justify-center h-32 text-gray-400"
-                        >
-                          Image not available
-                        </div>
-                      </template>
-                    </el-image>
-                    <div
-                      v-else
-                      class="flex items-center justify-center h-32 text-gray-400"
-                    >
-                      Not provided
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-card>
-
           <!-- Income Information -->
           <el-card shadow="never" class="flex-1">
             <template #header>
@@ -497,7 +452,7 @@ onMounted(() => {
                     :preview-src-list="[
                       selectedLoan.income_information.bank_statement,
                     ]"
-                    fit="cover"
+                    fit="contain"
                     class="w-full h-32 border rounded"
                   >
                     <template #error>
