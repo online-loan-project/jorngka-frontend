@@ -34,8 +34,8 @@ class AuthService extends BaseService {
     return await this._post(`${this._prefix}/telegram-chat-id`, req)
   }
 
-  async sendCode () {
-    return await this._get(`${this._prefix}/send/code`)
+  async sendCode (req) {
+    return await this._post(`${this._prefix}/send/code`, req)
   }
 
   //verify/code

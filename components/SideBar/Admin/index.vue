@@ -16,7 +16,8 @@ import {
   TrendCharts,
   Collection,
   Notebook,
-  DataAnalysis
+  DataAnalysis,
+  Warning
 } from '@element-plus/icons-vue'
 
 const isOpen = ref(true)
@@ -46,6 +47,7 @@ const menuItems = [
   { icon: User, label: 'Borrower Management', to: '/admin/borrower-management' },
   { icon: DataAnalysis, label: 'Credit', to: '/admin/credit' },
   { icon: Setting, label: 'Settings', to: '/admin/settings' },
+  { icon: Warning, label: 'Activity Log', to: '/admin/activity-log', class: 'mt-4 border-t border-gray-200 pt-2' },
   { icon: SwitchButton, label: 'Logout', to: '/admin/logout', class: 'mt-4 border-t border-gray-200 pt-2' }
 ]
 
@@ -57,6 +59,15 @@ const goTo = (path, label) => {
   activeItem.value = label
   navigateTo(path)
 }
+
+onMounted(() => {
+  // Set initial active item based on current route
+  const currentRoute = useRoute()
+  const currentItem = menuItems.find(item => item.to === currentRoute.path)
+  if (currentItem) {
+    activeItem.value = currentItem.label
+  }
+})
 </script>
 
 <template>

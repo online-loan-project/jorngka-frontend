@@ -1,7 +1,6 @@
 <script setup>
 import { useAuthStore } from '~/store/auth.js'
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
 
 definePageMeta({
   layout: 'auth',

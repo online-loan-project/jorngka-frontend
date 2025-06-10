@@ -6,8 +6,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
     return navigateTo('/login')
   }
 
-  // For face verification page, check if already verified
-  if (user?.face_verified_at) {
-    return navigateTo('/dashboard')
+  if (user.face_verified_at === null) {
+    return navigateTo('/identity-unverified') // Redirect if not verified
   }
 })

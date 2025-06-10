@@ -236,7 +236,7 @@ onMounted(() => {
     </el-card>
 
     <!-- Loan Details Dialog -->
-    <el-dialog v-model="showDetailsDialog" :title="`Loan #${selectedLoan?.id}`" width="800px">
+    <el-dialog v-model="showDetailsDialog" :title="`Loan #${selectedLoan?.id}`" width="800px" align-center>
       <div v-if="selectedLoan" class="space-y-6">
         <!-- Loan Information Section -->
         <div class="grid grid-cols-2 gap-4">
@@ -246,7 +246,7 @@ onMounted(() => {
           </div>
           <div>
             <h3 class="text-sm font-medium text-gray-500">Interest</h3>
-            <p class="mt-1 text-lg font-semibold">${{ parseFloat(selectedLoan.revenue).toFixed(2) }}</p>
+            <p class="mt-1 text-lg font-semibold">${{ parseFloat(selectedLoan.interest_monthly).toFixed(2) }}</p>
           </div>
           <div>
             <h3 class="text-sm font-medium text-gray-500">Duration</h3>

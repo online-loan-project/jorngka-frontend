@@ -95,9 +95,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   //sendCode get
-  const sendCode = async () => {
+  const sendCode = async (payload) => {
     try {
-      const { data } = await authService.sendCode()
+      const { data } = await authService.sendCode(payload)
       if (!data) {
         throw new Error('No data returned')
       }
@@ -106,7 +106,6 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = data
       return data
     } catch (error) {
-      ElMessage.error(error.message || 'Failed')
       throw new Error(`Failed: ${error.message || 'Unknown error'}`)
     }
   }

@@ -103,16 +103,18 @@
         }"></div>
           </div>
 
-          <div v-if="verificationResult?.result.face_details?.source" class="mt-6 space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="font-medium text-gray-800">Face Analysis</h3>
-              <el-tooltip content="Annotated ID document" placement="top">
-                <a :href="verificationResult?.result.annotated_source_url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                  <el-icon :size="12"><View /></el-icon>
-                  View annotated image
-                </a>
-              </el-tooltip>
-            </div>
+          <div v-if="false">
+            <div v-if="verificationResult?.result.face_details?.source" class="mt-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-medium text-gray-800">Face Analysis</h3>
+                <el-tooltip content="Annotated ID document" placement="top">
+                  <a :href="verificationResult?.result.annotated_source_url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                    <el-icon :size="12"><View /></el-icon>
+                    View annotated image
+                  </a>
+                </el-tooltip>
+              </div>
+          </div>
 
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -249,20 +251,22 @@
               </div>
 
               <!-- Pose analysis -->
-              <div v-if="verificationResult?.result.face_details?.target?.Pose" class="mt-4 pt-4 border-t border-gray-100 text-left">
-                <div class="text-xs font-medium text-gray-500 mb-2">POSE ANALYSIS</div>
-                <div class="space-y-3 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Yaw</span>
-                    <span class="font-mono">{{ verificationResult.result.face_details.target.Pose.Yaw.toFixed(1) }}°</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Pitch</span>
-                    <span class="font-mono">{{ verificationResult.result.face_details.target.Pose.Pitch.toFixed(1) }}°</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Roll</span>
-                    <span class="font-mono">{{ verificationResult.result.face_details.target.Pose.Roll.toFixed(1) }}°</span>
+              <div v-if="false">
+                <div v-if="verificationResult?.result.face_details?.target?.Pose" class="mt-4 pt-4 border-t border-gray-100 text-left">
+                  <div class="text-xs font-medium text-gray-500 mb-2">POSE ANALYSIS</div>
+                  <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Yaw</span>
+                      <span class="font-mono">{{ verificationResult.result.face_details.target.Pose.Yaw.toFixed(1) }}°</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Pitch</span>
+                      <span class="font-mono">{{ verificationResult.result.face_details.target.Pose.Pitch.toFixed(1) }}°</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Roll</span>
+                      <span class="font-mono">{{ verificationResult.result.face_details.target.Pose.Roll.toFixed(1) }}°</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -393,16 +397,19 @@
         }"></div>
           </div>
 
-          <div v-if="verificationResult?.result.face_details?.target" class="mt-6 space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="font-medium text-gray-800">Face Analysis</h3>
-              <el-tooltip content="Annotated selfie" placement="top">
-                <a :href="verificationResult?.result.annotated_target_url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                  <el-icon :size="12"><View /></el-icon>
-                  View annotated image
-                </a>
-              </el-tooltip>
-            </div>
+          <div v-if="false">
+            <div v-if="verificationResult?.result.face_details?.target" class="mt-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-medium text-gray-800">Face Analysis</h3>
+                <el-tooltip content="Annotated selfie" placement="top">
+                  <a :href="verificationResult?.result.annotated_target_url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                    <el-icon :size="12"><View /></el-icon>
+                    View annotated image
+                  </a>
+                </el-tooltip>
+              </div>
+          </div>
+
 
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -458,13 +465,14 @@ import {
   InfoFilled
 } from '@element-plus/icons-vue'
 import { useFaceVerifyStore } from '~/store/face.js'
+import { ElMessage } from 'element-plus'
 
 const faceStore = useFaceVerifyStore()
 const { faceVerify, getLatestNidImage, getLatestLivelinessImage } = faceStore
 
 definePageMeta({
   layout: 'default',
-  middleware: ['authenticated', 'face-verification'],
+  middleware: ['authenticated'],
 })
 
 const nidImage = ref(null)
@@ -474,6 +482,7 @@ const isVerifying = ref(false)
 const verificationResult = ref(null)
 const errorMessage = ref(null)
 const verificationStatus = ref(null)
+const detail = ref(true) // Toggle for showing detailed analysis
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'

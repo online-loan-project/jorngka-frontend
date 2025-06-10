@@ -35,6 +35,9 @@ const { value: user } = useCookie('user')
 const role = user?.role
 
 onMounted(() => {
+  if (user.face_verified_at === null) {
+    return navigateTo('/identity-unverified') // Redirect if not verified
+  }
   // Simulate async check
   setTimeout(() => {
     if (role !== 2) {
