@@ -65,7 +65,7 @@ const paidLoan = async (loanId) => {
 
     // Password input dialog
     const { value: password } = await ElMessageBox.prompt(
-      'Please enter your password to confirm this payment',
+      'Please enter your password to confirm this action.',
       'Password Confirmation',
       {
         confirmButtonText: 'Confirm',
@@ -115,6 +115,8 @@ const getStatusText = (statusCode) => {
   const statusMap = {
     0: 'UNPAID',
     1: 'PAID',
+    2: 'LATE',
+    3: 'PAID LATE',
   }
   return statusMap[statusCode] || statusCode
 }
@@ -132,6 +134,7 @@ const getRepaymentStatusText = (statusCode) => {
     0: 'Pending',
     1: 'Paid',
     2: 'Late',
+    3: 'Paid Late'
   }
   return statusMap[statusCode] || statusCode
 }
@@ -287,7 +290,7 @@ onMounted(() => {
         </el-table-column>
         <el-table-column prop="created_at" label="Request Date" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
+            {{ row.created_at }}
           </template>
         </el-table-column>
         <el-table-column label="Actions" width="120">
@@ -335,7 +338,7 @@ onMounted(() => {
           <div>
             <h3 class="text-sm font-medium text-gray-500">Interest Rate in Month</h3>
             <p class="mt-1 text-lg font-semibold">
-              ${{ parseFloat(selectedLoan.revenue).toFixed(2) }}
+              ${{ parseFloat(selectedLoan.interest_monthly).toFixed(2) }}
             </p>
           </div>
           <div>
@@ -397,7 +400,7 @@ onMounted(() => {
             <el-table-column label="Actions" width="120" align="center">
               <template #default="{ row }">
                 <el-button
-                  v-if="row.status === '0'"
+                  v-if="row.status === 0 || row.status === 2"
                   type="success"
                   size="small"
                   @click="paidLoan(row.id)"

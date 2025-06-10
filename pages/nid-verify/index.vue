@@ -4,8 +4,10 @@ import { ElMessage, ElUpload, ElButton, ElInput, ElAlert, ElProgress } from 'ele
 
 definePageMeta({
   layout: 'default',
-  middleware: ['authenticated', 'face-verification'],
+  middleware: ['authenticated'],
 })
+
+const user = useCookie('user').value
 
 const livelinessStore = useLivelinessStore()
 const { storeNid } = livelinessStore
@@ -98,6 +100,13 @@ const submitNid = async () => {
     isLoading.value = false
   }
 }
+
+onMounted(() => {
+  if (user.face_verified_at) {
+    ElMessage.error('Your idenity is already verified.')
+    navigateTo('/dashboard')
+  }
+})
 </script>
 
 <template>

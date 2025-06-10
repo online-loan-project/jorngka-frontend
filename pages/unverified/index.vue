@@ -17,7 +17,7 @@ useSeoMeta({
       <p class="text-gray-600 mt-2">
         Please verify your phone number before proceeding.
       </p>
-      <el-button type="primary" class="mt-4 w-full" @click="navigateTo('/otp')">
+      <el-button type="primary" class="mt-4 w-full" @click="navigateTo('/telegram')">
         Go Verify
       </el-button>
     </el-card>

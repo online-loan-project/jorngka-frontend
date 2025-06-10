@@ -98,6 +98,7 @@ const confirmStatusChange = (borrower) => {
       cancelButtonText: 'Cancel',
       type: 'warning',
     }
+
   ).then(async () => {
     await updateStatus(borrower.id, isActive ? '0' : '1')
   }).catch(() => {
@@ -108,7 +109,20 @@ const confirmStatusChange = (borrower) => {
 //update staus
 const updateStatus = async (borrowerId, status) => {
   try {
-    await staus(borrowerId, { status: status })
+    // Password input dialog
+    const { value: password } = await ElMessageBox.prompt(
+      'Please enter your password to confirm this action',
+      'Password Confirmation',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        inputType: 'password',
+        inputPattern: /\S+/, // At least one non-whitespace character
+        inputErrorMessage: 'Password is required',
+      },
+    )
+
+    await staus(borrowerId, { status: status, password: password })
     ElNotification({
       title: 'Success',
       message: 'Status updated successfully',
