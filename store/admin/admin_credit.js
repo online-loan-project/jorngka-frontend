@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import AdminCreditService from '~/services/Admin/AdminCreditService.js'
 
-export const useAdminCreditStore = defineStore('admin_request_loans', () => {
+export const useAdminCreditStore = defineStore('admin_credits', () => {
   const requestLoan = ref({})
   const adminCreditService = AdminCreditService.getInstance()
 

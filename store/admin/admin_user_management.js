@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import AdminUserManagementService from '~/services/Admin/AdminUserManagementService.js'
 
-export const useAdminUserManagementStore = defineStore('admin_loans', () => {
+export const useAdminUserManagementStore = defineStore('admin_user_managements', () => {
   const requestLoan = ref({})
   const adminUserManagementService = AdminUserManagementService.getInstance()
 
