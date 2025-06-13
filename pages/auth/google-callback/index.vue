@@ -131,7 +131,7 @@ const handleGoogleCallback = async () => {
       clearInterval(progressInterval)
       processing.value = false
       ElMessage.error('Please connect your telegram account')
-      return navigateTo('/update-profile')
+      return navigateTo('/telegram')
     }
     // Redirect to dashboard or intended route
     const redirectPath = route.query.redirect || '/dashboard'
