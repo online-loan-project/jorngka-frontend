@@ -192,6 +192,7 @@ onMounted(() => {
             </p>
             <el-input
               v-model="editablePhone"
+              type="number"
               placeholder="Enter Phone"
               size="large"
               class="mb-4"
