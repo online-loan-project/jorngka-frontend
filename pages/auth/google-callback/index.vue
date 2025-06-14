@@ -127,12 +127,21 @@ const handleGoogleCallback = async () => {
     // Complete progress
     progress.value = 100
     await new Promise(resolve => setTimeout(resolve, 500))
+    if (!data.is_google_registered) {
+      clearInterval(progressInterval)
+      processing.value = false
+      ElMessage.error('Please connect your telegram account')
+
+      return navigateTo('/update-profile')
+    }
+
     if (!data.telegram_chat_id) {
       clearInterval(progressInterval)
       processing.value = false
       ElMessage.error('Please connect your telegram account')
       return navigateTo('/telegram')
     }
+
     // Redirect to dashboard or intended route
     const redirectPath = route.query.redirect || '/dashboard'
     await navigateTo(redirectPath)
