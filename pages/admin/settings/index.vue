@@ -8,7 +8,7 @@ definePageMeta({
   middleware: ['authenticated'],
 })
 const authStore = useAuthStore()
-const { changePassword } = authStore
+const { changePassword, changeAvatar } = authStore
 
 const { value: userData } = useCookie('user')
 const user = ref({
@@ -64,7 +64,7 @@ const rules = {
 const isEditing = ref(false)
 const tempUser = ref({ ...user.value })
 
-const handleAvatarChange = (event) => {
+const handleAvatarChange = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
@@ -81,15 +81,25 @@ const handleAvatarChange = (event) => {
     return
   }
 
-  // Create preview URL
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    user.value.avatarUrl = e.target.result
-    if (isEditing.value) {
-      tempUser.value.avatarUrl = e.target.result
+  const formData = new FormData()
+  formData.append('image', file)
+
+  try {
+    const updatedUser = await changeAvatar(formData)
+
+    // Get the new image URL from response
+    const newImageUrl = updatedUser?.profile?.image
+    if (newImageUrl) {
+      user.value.avatarUrl = newImageUrl
+      if (isEditing.value) {
+        tempUser.value.avatarUrl = newImageUrl
+      }
     }
+
+    ElMessage.success('Avatar updated successfully!')
+  } catch (error) {
+    ElMessage.error('Failed to update avatar: ' + error.message)
   }
-  reader.readAsDataURL(file)
 }
 
 const startEditing = () => {

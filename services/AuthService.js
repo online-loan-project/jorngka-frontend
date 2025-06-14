@@ -47,6 +47,10 @@ class AuthService extends BaseService {
   async changePassword (req) {
     return await this._post(`${this._prefix}/change-password`, req)
   }
+
+  async changeAvatar (req) {
+    return await this._post(`${this._prefix}/update-avatar`, req)
+  }
 }
 
 export default AuthService

@@ -143,6 +143,40 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  //changeAvatar
+  const changeAvatar = async (credentials) => {
+    try {
+      const { data } = await authService.changeAvatar(credentials)
+      if (!data || !data.profile?.image) {
+        throw new Error('No image data returned')
+      }
+
+      // Get current user cookie
+      const currentUser = cookies.get('user')
+      if (!currentUser) throw new Error('No existing user cookie')
+
+      // Parse, update only the image
+      const updatedUser = { ...currentUser }
+      if (updatedUser.profile) {
+        updatedUser.profile.image = data.profile.image
+      } else {
+        updatedUser.profile = { image: data.profile.image }
+      }
+
+      // Set updated cookie
+      const cookieOptions = { secure: true, sameSite: 'Strict' }
+      cookies.set('user', JSON.stringify(updatedUser), cookieOptions)
+
+      // Update local user reference (e.g., ref or store)
+      user.value = updatedUser
+
+      return updatedUser
+    } catch (error) {
+      ElMessage.error(error.message || 'Failed')
+      throw new Error(`Failed: ${error.message || 'Unknown error'}`)
+    }
+  }
+
   return {
     user: computed(() => user.value),
     token,
@@ -154,5 +188,6 @@ export const useAuthStore = defineStore('auth', () => {
     sendCode,
     verifyCode,
     changePassword,
+    changeAvatar
   }
 })
