@@ -127,7 +127,7 @@ const handleGoogleCallback = async () => {
     // Complete progress
     progress.value = 100
     await new Promise(resolve => setTimeout(resolve, 500))
-    if (!data.is_google_registered) {
+    if (!data.is_google_login) {
       clearInterval(progressInterval)
       processing.value = false
       ElMessage.error('Please connect your telegram account')
